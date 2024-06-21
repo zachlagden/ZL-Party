@@ -1,0 +1,81 @@
+#qr-reader {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 10; /* Increased z-index to ensure modal is above other elements */
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2em;
+  border-radius: 0.5em;
+  max-width: 90%;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal.okay .modal-content {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.modal.already-used .modal-content {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.modal.invalid .modal-content {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+#continue-scanning,
+#use-voucher,
+#go-back {
+  margin-top: 1em;
+  padding: 0.5em 1em;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 0.25em;
+  cursor: pointer;
+  width: 100%;
+}
+
+#continue-scanning:hover,
+#use-voucher:hover,
+#go-back:hover {
+  background-color: #0056b3;
+}
+
+#owner-pfp {
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  margin-bottom: 1em;
+  cursor: pointer;
+}
+
+#enlarged-pfp {
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+}

@@ -1,0 +1,20 @@
+.scrollable-container {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.5rem;
+}
+.scrollable-container button {
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+.all-vouchers-button {
+  margin-right: 1rem; /* Add more margin to separate from other buttons */
+}
+.tab-content {
+  overflow-x: auto;
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}

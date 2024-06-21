@@ -1,0 +1,21 @@
+.scrollable-container {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.5rem;
+}
+.scrollable-container button {
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  word-wrap: break-word;
+}
+.tab-content {
+  overflow-x: auto;
+}
