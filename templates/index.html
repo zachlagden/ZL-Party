@@ -1,0 +1,306 @@
+{% extends "template.html" %} {% block title %}Suggest a Song{% endblock %} {%
+block head %}
+<style></style>
+{% endblock %} {% block content %}
+<div class="w-full max-w-lg p-8 bg-white shadow-lg rounded-lg">
+  <h2 class="text-3xl font-bold mb-4 text-center" id="greetingMessage">
+    Hello! Please suggest a song.
+  </h2>
+  <p class="text-lg text-gray-700 mb-6 text-center">
+    Enter a Spotify link below to suggest a song for the event.
+  </p>
+  <form id="suggestionForm" method="POST">
+    <div id="messageContainer"></div>
+    <div class="mb-4">
+      <label
+        for="spotifyLink"
+        class="block text-sm font-medium text-gray-700 mb-2"
+        >Spotify Link</label
+      >
+      <div class="flex">
+        <input
+          type="text"
+          id="spotifyLink"
+          name="spotifyLink"
+          class="block w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder="Enter Spotify link"
+        />
+        <button
+          type="button"
+          id="searchSongButton"
+          class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-r-md hover:bg-blue-600 transition duration-300"
+        >
+          Search
+        </button>
+      </div>
+    </div>
+    <button
+      type="submit"
+      class="w-full bg-indigo-500 text-white font-semibold py-2 rounded-md hover:bg-indigo-600 transition duration-300"
+    >
+      Submit
+    </button>
+  </form>
+  <p class="text-sm text-gray-500 mt-4">
+    Feel free to add as many suggestions as you want, but remember, the more you
+    add, the less likely they are to be played.
+  </p>
+  <div class="mt-6 text-center">
+    <a href="/suggestions" class="text-indigo-500 hover:text-indigo-600 mr-4"
+      >View Suggestions</a
+    >
+    <a href="/drinks" class="text-indigo-500 hover:text-indigo-600 mr-4"
+      >Redeem Drinks</a
+    >
+    <a
+      href="/admin"
+      class="text-indigo-500 hover:text-indigo-600 mr-4 hidden"
+      id="adminPanelLink"
+      >Admin Panel</a
+    >
+    <a href="/logout" class="text-indigo-500 hover:text-indigo-600">Logout</a>
+  </div>
+</div>
+
+<!-- Song Search Modal -->
+<div
+  id="songSearchModal"
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden"
+>
+  <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+    <h3 class="text-2xl font-bold mb-4">Search for Songs</h3>
+    <div class="flex mb-4">
+      <input
+        type="text"
+        id="songSearchInput"
+        class="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Enter song name or artist"
+      />
+      <button
+        type="button"
+        id="searchSongSubmit"
+        class="bg-blue-500 text-white font-semibold px-4 py-2 rounded-r-md hover:bg-blue-600 transition duration-300"
+      >
+        Search
+      </button>
+    </div>
+    <div id="searchResults" class="max-h-64 overflow-y-auto"></div>
+    <button
+      type="button"
+      id="closeSearchModal"
+      class="w-full bg-red-500 text-white font-semibold py-2 rounded-md hover:bg-red-600 transition duration-300 mt-4"
+    >
+      Close
+    </button>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  $.ajax({
+    url: "/api/whoami",
+    type: "GET",
+    success: function (data) {
+      let username =
+        data.username.charAt(0).toUpperCase() + data.username.slice(1);
+
+      $("#greetingMessage").text(`Hello, ${username}! Please suggest a song.`);
+
+      if (data.admin) {
+        $("#adminPanelLink").removeClass("hidden");
+      }
+    },
+    error: function () {
+      // This should technically never happen
+
+      // If the status code is 401, reload the page to redirect to the login page
+      if (error.status === 401) {
+        window.location.reload();
+      } else {
+        console.error("An unexpected error occurred", error);
+        toastr.error("An expected error occurred", "Error");
+      }
+    },
+  });
+
+  $("#suggestionForm").on("submit", function (event) {
+    event.preventDefault(); // Prevent the default form submission
+
+    // Serialize the form data
+    var formData = $(this).serializeArray();
+
+    if (!isValidSpotifyUrl(document.getElementById("spotifyLink").value)) {
+      toastr.error(
+        "Invalid Spotify link. Please enter a valid Spotify track URL.",
+        "Error"
+      );
+      return;
+    }
+
+    // Convert form data to JSON
+    var jsonData = {};
+    $.each(formData, function () {
+      jsonData[this.name] = this.value;
+    });
+
+    // Send the POST request with JSON data
+    $.ajax({
+      url: "/api/suggest",
+      type: "POST",
+      contentType: "application/json",
+      data: JSON.stringify(jsonData),
+      success: function (response) {
+        if ("ok" in response && response.ok) {
+          toastr.success(response.message, "Success");
+
+          // Clear the input field and search modal
+          document.getElementById("spotifyLink").value = "";
+          document.getElementById("songSearchInput").value = "";
+          document.getElementById("searchResults").innerHTML = "";
+        }
+      },
+      error: function (error) {
+        let response = error.responseJSON;
+
+        if ("ok" in response && !response.ok) {
+          toastr.error(response.error, "Error");
+        } else {
+          console.error("An unexpected error occurred", error);
+          toastr.error("An expected error occurred", "Error");
+        }
+      },
+    });
+  });
+
+  function isValidSpotifyUrl(url) {
+    return url.includes("open.spotify.com/track/");
+  }
+
+  function displayMessage(message, type) {
+    // Clear previous messages
+    document.getElementById("messageContainer").innerHTML = "";
+
+    var messageContainer = document.getElementById("messageContainer");
+    var messageElement = document.createElement("div");
+    messageElement.className =
+      type === "error"
+        ? "mb-4 text-red-500 text-sm"
+        : "mb-4 text-green-500 text-sm";
+    messageElement.innerText = message;
+    messageContainer.appendChild(messageElement);
+  }
+
+  document
+    .getElementById("searchSongButton")
+    .addEventListener("click", function () {
+      document.getElementById("songSearchModal").classList.remove("hidden");
+    });
+
+  document
+    .getElementById("closeSearchModal")
+    .addEventListener("click", function () {
+      document.getElementById("songSearchModal").classList.add("hidden");
+    });
+
+  document
+    .getElementById("searchSongSubmit")
+    .addEventListener("click", function () {
+      const query = document.getElementById("songSearchInput").value.trim();
+      if (query.length >= 1) {
+        $.ajax(`/api/search/${query}`, {
+          success: function (data) {
+            if ("ok" in data && data.ok) {
+              displaySearchResults(data);
+            } else {
+              console.error(
+                "An error occurred while searching for songs:",
+                data
+              );
+              toastr.error(
+                "An error occurred while searching for songs. Please try again.",
+                "Error"
+              );
+            }
+          },
+          error: function (error) {
+            console.error(
+              "An error occurred while searching for songs:",
+              error
+            );
+            toastr.error(
+              "An error occurred while searching for songs. Please try again.",
+              "Error"
+            );
+          },
+        });
+      } else {
+        toastr.error(
+          "Please enter a search query with at least 1 character.",
+          "Error"
+        );
+      }
+    });
+
+  function displaySearchResults(results) {
+    const searchResultsContainer = document.getElementById("searchResults");
+    searchResultsContainer.innerHTML = "";
+    results.tracks.items.forEach((track) => {
+      const trackElement = document.createElement("div");
+      trackElement.classList.add(
+        "flex",
+        "items-center",
+        "justify-between",
+        "mb-4"
+      );
+
+      const trackInfo = document.createElement("div");
+      trackInfo.classList.add("flex", "items-center");
+
+      const albumArt = document.createElement("img");
+      albumArt.src = track.album.images[0].url;
+      albumArt.alt = track.name;
+      albumArt.classList.add("w-12", "h-12", "mr-4", "rounded-md");
+
+      const trackDetails = document.createElement("div");
+      const trackName = document.createElement("p");
+      trackName.classList.add("font-bold");
+      trackName.innerText = track.name;
+      const trackArtists = document.createElement("p");
+      trackArtists.classList.add("text-sm", "text-gray-600");
+      trackArtists.innerText = track.artists
+        .map((artist) => artist.name)
+        .join(", ");
+
+      trackDetails.appendChild(trackName);
+      trackDetails.appendChild(trackArtists);
+      trackInfo.appendChild(albumArt);
+      trackInfo.appendChild(trackDetails);
+
+      const selectButton = document.createElement("button");
+      selectButton.classList.add(
+        "bg-green-500",
+        "text-white",
+        "font-semibold",
+        "py-1",
+        "px-3",
+        "rounded-md",
+        "hover:bg-green-600",
+        "transition",
+        "duration-300"
+      );
+      selectButton.innerText = "Select";
+      selectButton.addEventListener("click", function () {
+        document.getElementById("spotifyLink").value =
+          track.external_urls.spotify;
+        document.getElementById("songSearchModal").classList.add("hidden");
+        document
+          .getElementById("suggestionForm")
+          .dispatchEvent(new Event("submit"));
+      });
+
+      trackElement.appendChild(trackInfo);
+      trackElement.appendChild(selectButton);
+      searchResultsContainer.appendChild(trackElement);
+    });
+  }
+</script>
+{% endblock %}

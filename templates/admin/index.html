@@ -1,0 +1,120 @@
+{% extends "template.html" %} {% block title %}Admin Panel{% endblock %} {%
+block head %}
+<style></style>
+{% endblock %} {% block content %}
+<div class="w-full max-w-4xl p-8 bg-white shadow-lg rounded-lg">
+  <h2 class="text-3xl font-bold mb-4 text-center">Admin Panel</h2>
+  <div class="text-center">
+    <a href="/" class="text-indigo-500 hover:text-indigo-600"
+      >Back to Dashboard</a
+    >
+  </div>
+  <br />
+  <p class="text-center text-lg text-gray-700 mb-6" id="welcomeGreeting">
+    Welcome, {{ username }}!
+  </p>
+
+  <div class="mb-6 text-center">
+    <p class="text-2xl font-semibold" id="currentSuggestions">
+      Current Suggestions: <span>{{ current_suggestions }}</span>
+    </p>
+  </div>
+
+  <div class="flex justify-center mb-6 space-x-4">
+    <form action="/admin/users" method="get">
+      <button
+        type="submit"
+        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+      >
+        User Management
+      </button>
+    </form>
+    <form action="/admin/suggestions" method="get">
+      <button
+        type="submit"
+        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+      >
+        View Suggestions
+      </button>
+    </form>
+    <form action="/admin/vouchers" method="get">
+      <button
+        type="submit"
+        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+      >
+        Manage Vouchers
+      </button>
+    </form>
+    <form action="/admin/drinks/scan" method="get">
+      <button
+        type="submit"
+        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
+      >
+        Scan Vouchers
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    $.ajax({
+      url: "/api/admin/suggestions",
+      type: "GET",
+      success: function (data) {
+        if (
+          "ok" in data &&
+          data.ok &&
+          "info" in data &&
+          "total_suggestions" in data.info
+        ) {
+          $("#currentSuggestions").html(
+            `Current Suggestions: <span>${data.info.total_suggestions}</span>`
+          );
+        } else {
+          console.error("Failed to fetch suggestions count: ", data);
+          toastr.error("Failed to fetch suggestions count", "Error");
+        }
+      },
+      error: function (error) {
+        response = error.responseJSON;
+
+        if ("ok" in data && !data.ok && "error" in data) {
+          console.error("Failed to fetch suggestions count: ", data.error);
+          toastr.error(data.error, "Error");
+        } else {
+          console.error("Failed to fetch suggestions count: ", error);
+          toastr.error("Failed to fetch suggestions count", "Error");
+        }
+      },
+    });
+
+    $.ajax({
+      url: "/api/whoami",
+      type: "GET",
+      success: function (data) {
+        if ("ok" in data && data.ok && "username" in data) {
+          let capsUsername =
+            data.username.charAt(0).toUpperCase() + data.username.slice(1);
+
+          $("#welcomeGreeting").html(`Welcome, ${capsUsername}!`);
+        } else {
+          console.error("Failed to fetch username: ", data);
+          toastr.error("Failed to fetch username", "Error");
+        }
+      },
+      error: function (error) {
+        response = error.responseJSON;
+
+        if ("ok" in data && !data.ok && "error" in data) {
+          console.error("Failed to fetch username: ", data.error);
+          toastr.error(data.error, "Error");
+        } else {
+          console.error("Failed to fetch username: ", error);
+          toastr.error("Failed to fetch username", "Error");
+        }
+      },
+    });
+  });
+</script>
+{% endblock %}

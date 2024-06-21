@@ -1,0 +1,109 @@
+{% extends "template.html" %} {% block title %}Login{% endblock %} {% block head
+%}
+<style></style>
+{% endblock %} {% block content %}
+<div class="w-full max-w-sm p-8 bg-white shadow-lg rounded-lg">
+  <h2 class="text-2xl font-bold mb-6 text-center">Login</h2>
+  <form id="loginForm">
+    <div id="messageContainer"></div>
+    <div class="mb-4">
+      <label for="username" class="block text-sm font-medium text-gray-700 mb-2"
+        >Username</label
+      >
+      <input
+        type="text"
+        id="username"
+        name="username"
+        autocomplete="username"
+        class="block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        placeholder="Enter your username"
+      />
+      <label
+        for="password"
+        class="block text-sm font-medium text-gray-700 mb-2 hidden mt-4"
+        id="passwordLabel"
+        >Password</label
+      >
+      <input
+        type="password"
+        id="password"
+        name="password"
+        autocomplete="current-password"
+        class="block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 hidden"
+        placeholder="Enter your password"
+      />
+
+      <p class="text-sm text-gray-500 mt-2">
+        Your username is just your first name. It will only work if you were
+        invited to the "Fuck FCoT Party".
+      </p>
+    </div>
+    <button
+      type="submit"
+      class="w-full bg-indigo-500 text-white font-semibold py-2 rounded-md hover:bg-indigo-600 transition duration-300"
+    >
+      Login
+    </button>
+  </form>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  const loginapiroute = "/api/login";
+
+  $(document).ready(function () {
+    $("#loginForm").on("submit", function (event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      // Serialize the form data
+      var formData = $(this).serializeArray();
+
+      // Convert form data to JSON
+      var jsonData = {};
+      $.each(formData, function () {
+        jsonData[this.name] = this.value;
+      });
+
+      // Send the POST request with JSON data
+      $.ajax({
+        url: loginapiroute,
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(jsonData),
+
+        success: function (response) {
+          if ("ok" in response && response.ok === true) {
+            // Reload the page
+            window.location.reload();
+          } else {
+            console.error(
+              "An Expected Error Occurred On A Successful Request:",
+              response.error
+            );
+            toastr.error("An expected error occurred", "Error");
+          }
+        },
+
+        error: function (error) {
+          let response = error.responseJSON;
+
+          if ("ok" in response && response.ok === false) {
+            if ("action" in response) {
+              if (response.action === "provide_password") {
+                $("#password").removeClass("hidden");
+                $("#passwordLabel").removeClass("hidden");
+                $("#password").focus();
+              }
+            } else {
+              console.error("An Expected Error Occurred:", response.error);
+              toastr.error(response.error, "Error");
+            }
+          } else {
+            console.error("An Unexpected Error Occurred:", error);
+            toastr.error("An unexpected error occurred", "Error");
+          }
+        },
+      });
+    });
+  });
+</script>
+{% endblock %}
